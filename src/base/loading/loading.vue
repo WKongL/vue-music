@@ -6,10 +6,12 @@
 </template>
 
 <script type="text/ecmascript-6">
-    props: {
-        title: {
-            type: String
-            default: '正在加载中。。。。'
+    export default {
+        props: {
+            title: {
+                type: String,
+                default: '正在加载中。。。。'
+            }
         }
     }
 </script>

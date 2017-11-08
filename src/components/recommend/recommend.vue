@@ -26,6 +26,9 @@
                     </ul>
                 </div>
             </div>
+            <div class="loading-container" v-show="!discList.length">
+                <loading></loading>
+            </div>
         </Scroll>
 	</div>
 </template>
@@ -35,6 +38,8 @@
     import {ERR_OK} from 'api/config'
     import slider from 'base/slider/slider'
     import Scroll from 'base/scroll/scroll'
+    import loading from 'base/loading/loading'
+
     export default {
         data() {
             return {
@@ -74,7 +79,8 @@
         },
         components: {
             slider,
-            Scroll
+            Scroll,
+            loading
         }
     }
 </script>
@@ -124,5 +130,10 @@
                             color: $color-text
                         .desc
                             color: $color-text-d
+            .loading-container
+                position: absolute
+                top: 50%
+                width: 100%
+                transform: translateY(-50%)
                 
 </style>
