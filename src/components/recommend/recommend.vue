@@ -1,30 +1,32 @@
 <template>
 	<div class="recommend">
-        <div class="recommend-content">
-            <div class="slider-wrapper" v-if="recommends.length">
-                <slider>
-                    <div v-for="item in recommends">
-                        <a :href="item.linkUrl">
-                            <img :src="item.picUrl">
-                        </a>
-                    </div>
-                </slider>
-            </div>
-            <div class="recommend-list">
-                <h1 class="list-title">热门歌单推荐</h1>
-                <ul>
-                    <li v-for="item in discList" class="item">
-                        <div class="icon">
-                            <img height="60px" width="60px" :src="item.imgurl">
+        <Scroll ref="scroll" class="recommend-content" :data="discList">
+            <div>
+                <div class="slider-wrapper" v-if="recommends.length">
+                    <slider>
+                        <div v-for="item in recommends">
+                            <a :href="item.linkUrl">
+                                <img class="needsclick" @load="loadImage" :src="item.picUrl">
+                            </a>
                         </div>
-                        <div class="text">
-                            <h2 class="name">{{item.creator.name}}</h2>
-                            <p class="desc">{{item.dissname}}</p>
-                        </div>
-                    </li>
-                </ul>
+                    </slider>
+                </div>
+                <div class="recommend-list">
+                    <h1 class="list-title">热门歌单推荐</h1>
+                    <ul>
+                        <li v-for="item in discList" class="item">
+                            <div class="icon">
+                                <img height="60" width="60" v-lazy="item.imgurl">
+                            </div>
+                            <div class="text">
+                                <h2 class="name" v-html="item.creator.name"></h2>
+                                <p class="desc" v-html="item.dissname"></p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
+        </Scroll>
 	</div>
 </template>
 
@@ -32,7 +34,7 @@
     import {getRecommend, getDiscList} from 'api/recommend'
     import {ERR_OK} from 'api/config'
     import slider from 'base/slider/slider'
-
+    import Scroll from 'base/scroll/scroll'
     export default {
         data() {
             return {
@@ -41,7 +43,9 @@
             }
         },
         created() {
-            this._getRecommend()
+            setTimeout(() => {
+                this._getRecommend()
+            }, 1000)
             this._getDiscList()
         },
         methods: {
@@ -58,10 +62,19 @@
                         this.discList = res.data.list
                     }
                 })
+            },
+            loadImage() {
+                if (!this.checkLoaded) {
+                    this.checkLoaded = true
+                    setTimeout(() => {
+                        this.$refs.scroll.refresh()
+                    }, 20)
+                }
             }
         },
         components: {
-            slider
+            slider,
+            Scroll
         }
     }
 </script>
@@ -77,6 +90,7 @@
         width: 100%
         .recommend-content
             height: 100%
+            overflow: hidden
             .slider-wrapper
                 position: relative
                 width: 100%
