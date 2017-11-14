@@ -1,5 +1,5 @@
 <template>
-    <scroll class="listview" :data="data" ref="listview">
+    <scroll class="listview" :data="data" ref="listview" :listenScroll="listenScroll" @scroll="scroll" :probeType="probeType">
         <ul>
             <li v-for="group in data" class="list-group" ref="listgroup">
                 <h2 class="list-group-title">{{group.title}}</h2>
@@ -13,8 +13,14 @@
         </ul>
         <div class="list-shortcut" @touchstart="onShortcutTouchStart" @touchmove.stop.prevent="onShortcutTouchMove">
             <ul>
-                <li v-for="(item, index) in shortcutList" class="item" :data-index="index">{{item}}</li>
+                <li v-for="(item, index) in shortcutList" class="item" :data-index="index" :class="{'current':currentIndex === index}">{{item}}</li>
             </ul>
+        </div>
+        <div class="list-fixed" v-show="fixedTitle" ref="listFixed">
+            <h1 class="title">{{fixedTitle}}</h1>
+        </div>
+        <div v-show="!data.length" class="loading-container">
+            <loading></loading>
         </div>
     </scroll>
 </template>
@@ -22,9 +28,9 @@
 <script type="text/ecmascript-6">
     import scroll from 'base/scroll/scroll'
     import {getData} from 'common/js/dom'
-
+    import loading from 'base/loading/loading'
     const ANCHOR_HEIGHT = 18
-
+    const TITLE_HEIGHT = 30
     export default {
         props: {
             data: {
@@ -32,17 +38,34 @@
                 default: []
             }
         },
+        data() {
+            return {
+                scrollY: -1,
+                currentIndex: 0,
+                diff: -1
+            }
+        },
         created() {
             this.touch = {}
+            this.listenScroll = true
+            this.listHeight = []
+            this.probeType = 3
         },
         computed: {
             shortcutList() {
                 return this.data.map((item) => {
                     return item.title.substr(0, 1)
                 })
+            },
+            fixedTitle() {
+                if (this.scrollY > 0) {
+                    return ''
+                }
+                return this.data[this.currentIndex] ? this.data[this.currentIndex].title : ''
             }
         },
         methods: {
+            // 侧边栏触摸时跳转到对应栏目
             onShortcutTouchStart(e) {
                 let anchorIndex = getData(e.target, 'index')
                 let firstTouch = e.touches[0]
@@ -50,6 +73,7 @@
                 this.touch.anchorIndex = anchorIndex
                 this._scrollTo(anchorIndex)
             },
+            // 侧边栏触摸移动时，对应栏目也跟着变化
             onShortcutTouchMove(e) {
                 let firstTouch = e.touches[0]
                 this.touch.y2 = firstTouch.pageY
@@ -57,12 +81,80 @@
                 let anchorIndex = parseInt(this.touch.anchorIndex) + delta
                 this._scrollTo(anchorIndex)
             },
+            // scroll组件派发出来事件，获取当前Y值
+            scroll(pos) {
+                this.scrollY = pos.y
+            },
             _scrollTo(index) {
+                // 触摸索引外的地方则返回
+                if (!index && index !== 0) {
+                    return
+                }
+                // 移动到索引范围外则赋值对应的上下限值
+                if (index < 0) {
+                    index = 0
+                } else if (index > this.listHeight.length - 2) {
+                    index = this.listHeight.length - 2
+                }
+                this.scrollY = -this.listHeight[index]
                 this.$refs.listview.scrollToElement(this.$refs.listgroup[index], 0)
+            },
+            // 计算每个栏目所占的高度
+            _calculateHeight() {
+                this.listHeight = []
+                const listGroup = this.$refs.listgroup
+                let height = 0
+                this.listHeight.push(height)
+                for (let i = 0; i < listGroup.length; i++) {
+                    let item = listGroup[i]
+                     height += item.clientHeight
+                     this.listHeight.push(height)
+                }
+            }
+        },
+        watch: {
+            data() {
+                setTimeout(() => {
+                    this._calculateHeight()
+                }, 20) // 延迟计算，目的为了等dom完成渲染
+            },
+            // 通过当前Y值，判断所移动到的区间
+            scrollY(newY) {
+                const listHeight = this.listHeight
+                // 滚动到顶部
+                if (newY > 0) {
+                    this.currentIndex = 0
+                    return
+                }
+                // 滚动到中间部分
+                for (let i = 0; i < listHeight.length - 1; i++) {
+                    let height1 = listHeight[i]
+                    let height2 = listHeight[i + 1]
+                    if (-newY >= height1 && -newY < height2) {
+                        this.currentIndex = i
+                        this.diff = height2 + newY
+                        return
+                    }
+                }
+
+                // 滚动到底部
+                this.currentIndex = listHeight.length - 2
+            },
+            diff(newVal) {
+                // 根据栏目标题与Y轴距离差，试置顶标题顶上
+                let fixedTop = (newVal > 0 && newVal < TITLE_HEIGHT) ? newVal - TITLE_HEIGHT : 0
+                console.log('this ' + this.fixedTop)
+                console.log('fixedTop ' + fixedTop)
+                if (this.fixedTop === fixedTop) {
+                    return
+                }
+                this.fixedTop = fixedTop
+                this.$refs.listFixed.style.transform = `translate3d(0, ${fixedTop}px, 0)`
             }
         },
         components: {
-            scroll
+            scroll,
+            loading
         }
     }
 </script>
@@ -112,4 +204,23 @@
                 padding: 3px
                 color: $color-text-l
                 font-size: $font-size-small
+                &.current
+                    color: $color-theme
+        .list-fixed
+            position: absolute
+            top: 0
+            left: 0
+            width: 100%
+            .title
+                height: 30px
+                line-height: 30px
+                padding-left: 20px
+                font-size: $font-size-small
+                color: $color-text-l
+                background: $color-highlight-background
+        .loading-container
+            position: absolute
+            top: 50%
+            width: 100%
+            transform: translateY(-50%)
 </style>
