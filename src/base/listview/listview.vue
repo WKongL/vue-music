@@ -4,7 +4,7 @@
             <li v-for="group in data" class="list-group" ref="listgroup">
                 <h2 class="list-group-title">{{group.title}}</h2>
                 <ul>
-                    <li v-for="item in group.items" class="list-group-item">
+                    <li v-for="item in group.items" class="list-group-item" @click="selectItem(item)">
                         <img class="avatar" v-lazy="item.avatar"/>
                         <span class="name">{{item.name}}</span>
                     </li>
@@ -85,6 +85,9 @@
             scroll(pos) {
                 this.scrollY = pos.y
             },
+            selectItem(item) {
+                this.$emit('select', item)
+            },
             _scrollTo(index) {
                 // 触摸索引外的地方则返回
                 if (!index && index !== 0) {
@@ -143,8 +146,6 @@
             diff(newVal) {
                 // 根据栏目标题与Y轴距离差，试置顶标题顶上
                 let fixedTop = (newVal > 0 && newVal < TITLE_HEIGHT) ? newVal - TITLE_HEIGHT : 0
-                console.log('this ' + this.fixedTop)
-                console.log('fixedTop ' + fixedTop)
                 if (this.fixedTop === fixedTop) {
                     return
                 }
