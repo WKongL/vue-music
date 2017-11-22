@@ -10,7 +10,7 @@ Vue.use(Router)
 export default new Router({
   routes: [
     {
-      path: '/rand',
+      path: '/rank',
       component: Rank
     },
     {
