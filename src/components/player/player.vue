@@ -22,18 +22,25 @@
                     </div>
                 </div>
                 <div class="bottom">
+                    <div class="progress-wrapper">
+                        <div class="time time-l">{{format(currentTime)}}</div>
+                        <div class="progress-bar-wrapper">
+                            <progress-bar :percent="percent"></progress-bar>
+                        </div>
+                        <div class="time time-r">{{format(currentSong.duration)}}</div>
+                    </div>
                     <div class="operators">
                         <div class="icon i-left">
                             <i class="icon-sequence"></i>
                         </div>
-                        <div class="icon i-left">
-                            <i class="icon-prev"></i>
+                        <div class="icon i-left" :class="disableCls">
+                            <i class="icon-prev" @click="prev"></i>
                         </div>
-                        <div class="icon i-center">
+                        <div class="icon i-center" :class="disableCls">
                             <i :class="playIcon" @click="togglePlaying"></i>
                         </div>
-                        <div class="icon i-right">
-                            <i class="icon-next"></i>
+                        <div class="icon i-right" :class="disableCls">
+                            <i class="icon-next" @click="next"></i>
                         </div>
                         <div class="icon i-right">
                             <i class="icon-not-like"></i>
@@ -59,14 +66,20 @@
                 </div>
             </div>
         </transition>
-        <audio ref="audio" :src="currentSong.url"></audio>
+        <audio ref="audio" :src="currentSong.url" @canplay="ready" @error="error" @timeupdate="updateTime"></audio>
     </div>
 </template>
 
 <script text="text/ecmascript-6">
     import {mapGetters, mapMutations} from 'vuex'
-    
+    import progressBar from 'base/progress-bar/progress-bar'
     export default {
+        data() {
+            return {
+                songReady: false,
+                currentTime: 0
+            }
+        },
         computed: {
             cdCls() {
                 return this.playing ? 'play' : 'play pause'
@@ -77,26 +90,92 @@
             playIcon() {
                return this.playing ? 'icon-pause' : 'icon-play'
             },
+            disableCls() {
+                return this.songReady ? '' : 'disable'
+            },
+            percent() {
+                return this.currentTime / this.currentSong.duration
+            },
             ...mapGetters([
                 'fullScreen',
                 'playList',
                 'currentSong',
-                'playing'
+                'playing',
+                'currentIndex'
             ])
         },
         methods: {
             back() {
                 this.setFullScreen(false)
             },
+            updateTime(e) {
+                this.currentTime = e.target.currentTime
+            },
+            // 格式化时间
+            format(data) {
+                data = data | 0
+                let minute = data / 60 | 0
+                let second = this._pad(data % 60)
+                return `${minute}:${second}`
+            },
+            // 根据n的数量从十位数开始添加0  例：01
+            _pad(num, n = 2) {
+                let len = num.toString().length
+                while (len < n) {
+                    num = '0' + num
+                    len++
+                }
+                return num
+            },
             open() {
                 this.setFullScreen(true)
             },
             togglePlaying() {
+                if (!this.songReady) {
+                    return
+                }
                 this.setPlaying(!this.playing)
+            },
+            next() {
+                if (!this.songReady) {
+                    return
+                }
+                let index = this.currentIndex + 1
+                if (index === this.playList.length) {
+                    index = 0
+                }
+                this.setCurrentIndex(index)
+                if (!this.playing) {
+                    this.togglePlaying()
+                }
+                this.songReady = false
+            },
+            prev() {
+                if (!this.songReady) {
+                    return
+                }
+                let index = this.currentIndex - 1
+                if (index === -1) {
+                    index = this.playList.length - 1
+                }
+                this.setCurrentIndex(index)
+                if (!this.playing) {
+                    this.togglePlaying()
+                }
+                this.songReady = false
+            },
+            ready() {
+                // 控制歌曲切换
+                this.songReady = true
+            },
+            error() {
+                // 预防特殊错误，导致不能切换歌曲
+                this.songReady = true
             },
             ...mapMutations({
                 setFullScreen: 'SET_FULL_SCREEN',
-                setPlaying: 'SET_PLAYING_STATE'
+                setPlaying: 'SET_PLAYING_STATE',
+                setCurrentIndex: 'SET_CURRENT_INDEX'
             })
         },
         watch: {
@@ -111,6 +190,9 @@
                     status ? audio.play() : audio.pause()
                 })
             }
+        },
+        components: {
+            progressBar
         }
     }
 </script>
@@ -209,12 +291,32 @@
                 position: absolute
                 bottom: 50px
                 width: 100%
+                .progress-wrapper
+                    display: flex
+                    align-items: center
+                    width: 80%
+                    margin: 0 auto
+                    padding: 10px 0
+                    .time
+                        flex: 0 0 30px
+                        width: 30px
+                        line-height: 30px
+                        font-size: $font-size-small
+                        color: $color-text
+                        &.time-l
+                            text-align: left
+                        &.time-r
+                            text-align: right 
+                    .progress-bar-wrapper
+                        flex: 1
                 .operators
                     display: flex
                     align-items: center    
                     .icon
                         flex: 1
                         color: $color-theme
+                        &.disable
+                            color: $color-theme-d
                         i 
                             font-size: 30px
                     .i-left   
@@ -222,6 +324,8 @@
                     .i-center
                         padding: 0 20px
                         text-align: center
+                        i 
+                            font-size: 40px
                     .i-right
                         text-align: left
             &.normal-enter-active, &.normal-leave-active
