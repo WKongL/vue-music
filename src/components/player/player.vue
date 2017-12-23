@@ -25,7 +25,7 @@
                     <div class="progress-wrapper">
                         <div class="time time-l">{{format(currentTime)}}</div>
                         <div class="progress-bar-wrapper">
-                            <progress-bar :percent="percent"></progress-bar>
+                            <progress-bar :percent="percent" @percentChange="onProgressBarChange"></progress-bar>
                         </div>
                         <div class="time time-r">{{format(currentSong.duration)}}</div>
                     </div>
@@ -59,7 +59,9 @@
                     <p class="desc" v-html="currentSong.singer"></p>
                 </div>
                 <div class="control">
-                    <i :class="miniPlayIcon" @click.stop="togglePlaying"></i>
+                    <progress-circle :length="32" :percent="percent">
+                        <i :class="miniPlayIcon" class="icon-mini" @click.stop="togglePlaying"></i>
+                    </progress-circle>
                 </div>
                 <div class="control">
                     <i class="icon-playlist"></i>
@@ -73,6 +75,8 @@
 <script text="text/ecmascript-6">
     import {mapGetters, mapMutations} from 'vuex'
     import progressBar from 'base/progress-bar/progress-bar'
+    import progressCircle from 'base/progress-circle/progress-circle'
+
     export default {
         data() {
             return {
@@ -126,6 +130,12 @@
                     len++
                 }
                 return num
+            },
+            onProgressBarChange(percent) {
+                this.$refs.audio.currentTime = this.currentSong.duration * percent
+                if (!this.playing) {
+                    this.togglePlaying()
+                }
             },
             open() {
                 this.setFullScreen(true)
@@ -192,7 +202,8 @@
             }
         },
         components: {
-            progressBar
+            progressBar,
+            progressCircle
         }
     }
 </script>
@@ -388,7 +399,11 @@
             .icon-play-mini,.icon-pause-mini, .icon-playlist
                 font-size: 30px
                 color: $color-theme-d
-
+            .icon-mini
+                position: absolute
+                top: 0
+                left: 0
+                font-size: 32px
     @keyframes rotate
         0%
             transform: rotate(0)
