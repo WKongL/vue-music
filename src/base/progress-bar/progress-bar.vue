@@ -28,7 +28,10 @@
         },
         methods: {
             progressBtnClick(e) {
-                this._offsetWidth(e.offsetX)
+                // this._offsetWidth(e.offsetX)
+                const barLeft = this.$refs.progressBar.getBoundingClientRect().left
+                const offsetX = e.pageX - barLeft
+                this._offsetWidth(offsetX)
                 this._triggerPercent()
             },
             progressBtnStart(e) {
