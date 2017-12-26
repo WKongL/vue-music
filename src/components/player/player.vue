@@ -13,11 +13,14 @@
                     <h2 class="subTitle" v-html="currentSong.singer"></h2>
                 </div>
                 <div class="middle" @touchstart="middleTouchStart" @touchmove="middleTouchMove" @touchend="middleTouchEnd">
-                    <div class="middle-l">
+                    <div class="middle-l" ref="middleL">
                         <div class="cd-wrapper">
                             <div class="cd" :class="cdCls">
                                 <img :src="currentSong.image" alt="" class="image">
                             </div>
+                        </div>
+                        <div class="playing-lyric-wrapper">
+                            <div class="playing-lyric">{{playingLyric}}</div>
                         </div>
                     </div>
                     <scroll class="middle-r" ref="lyricList" :data="currentLyric && currentLyric.lines">
@@ -94,6 +97,10 @@
     import {shuffle} from 'common/js/util'
     import Lyric from 'lyric-parser'
     import Scroll from 'base/scroll/scroll'
+    import {prefixStyle} from 'common/js/dom'
+
+    const transform = prefixStyle('transform')
+    const transitionDuration = prefixStyle('transitionDuration')
 
     export default {
         data() {
@@ -102,7 +109,8 @@
                 currentTime: 0,
                 currentLyric: null,
                 currentLineNum: 0,
-                currentShow: 'cd'
+                currentShow: 'cd',
+                playingLyric: ''
             }
         },
         created() {
@@ -153,6 +161,7 @@
                     return
                 }
                 const touch = e.touches[0]
+                console.log(touch.pageX)
                 const moveX = touch.pageX - this.touch.startX
                 const moveY = touch.pageY - this.touch.startY
                 // 如果纵轴移动距离比横轴移动距离大，则不处理。
@@ -162,10 +171,41 @@
                 // 歌词本来位置的left，不是0就是屏幕本身宽度的负值
                 const left = this.currentShow === 'cd' ? 0 : -window.innerWidth
                 // 歌词移动的范围是0到屏幕的负值宽度
-                const move = Math.min(0, Math.max(-window.innerWidth, left + moveX))
-                this.$refs.lyricList.$el.style['transform'] = `translate3d(${move}px, 0, 0)`
+                const moveWidth = Math.min(0, Math.max(-window.innerWidth, left + moveX))
+                this.touch.percent = Math.abs(moveWidth / window.innerWidth)
+                this.$refs.middleL.style.opacity = 1 - this.touch.percent
+                this.$refs.middleL.style[transitionDuration] = 0
+                this.$refs.lyricList.$el.style[transform] = `translate3d(${moveWidth}px, 0, 0)`
+                this.$refs.lyricList.$el.style[transitionDuration] = 0
             },
             middleTouchEnd() {
+                let moveWidth
+                let opacity
+                const time = 300
+                // 移动距离超过10%则自动移动到最后
+                if (this.currentShow === 'cd') {
+                    if (this.touch.percent > 0.1) {
+                        moveWidth = -window.innerWidth
+                        this.currentShow = 'lyric'
+                        opacity = 0
+                    } else {
+                        moveWidth = 0
+                        opacity = 1
+                    }
+                } else {
+                    if (this.touch.percent < 0.9) {
+                        moveWidth = 0
+                        this.currentShow = 'cd'
+                        opacity = 1
+                    } else {
+                        moveWidth = -window.innerWidth
+                        opacity = 0
+                    }
+                }
+                this.$refs.lyricList.$el.style[transform] = `translate3d(${moveWidth}px, 0, 0)`
+                this.$refs.lyricList.$el.style[transitionDuration] = `${time}ms`
+                this.$refs.middleL.style.opacity = opacity
+                this.$refs.middleL.style[transitionDuration] = `${time}ms`
                 this.touch.initiated = false
             },
             updateTime(e) {
@@ -210,9 +250,13 @@
                 this.setCurrentIndex(index)
             },
             onProgressBarChange(percent) {
-                this.$refs.audio.currentTime = this.currentSong.duration * percent
+                const currentTime = this.currentSong.duration * percent
+                this.$refs.audio.currentTime = currentTime
                 if (!this.playing) {
                     this.togglePlaying()
+                }
+                if (this.currentLyric) {
+                    this.currentLyric.seek(currentTime * 1000)
                 }
             },
             open() {
@@ -223,18 +267,25 @@
                     return
                 }
                 this.setPlaying(!this.playing)
+                if (this.currentLyric) {
+                    this.currentLyric.togglePlay()
+                }
             },
             next() {
                 if (!this.songReady) {
                     return
                 }
-                let index = this.currentIndex + 1
-                if (index === this.playList.length) {
-                    index = 0
-                }
-                this.setCurrentIndex(index)
-                if (!this.playing) {
-                    this.togglePlaying()
+                if (this.playList.length === 1) {
+                    this.loop()
+                } else {
+                    let index = this.currentIndex + 1
+                    if (index === this.playList.length) {
+                        index = 0
+                    }
+                    this.setCurrentIndex(index)
+                    if (!this.playing) {
+                        this.togglePlaying()
+                    }
                 }
                 this.songReady = false
             },
@@ -242,13 +293,17 @@
                 if (!this.songReady) {
                     return
                 }
-                let index = this.currentIndex - 1
-                if (index === -1) {
-                    index = this.playList.length - 1
-                }
-                this.setCurrentIndex(index)
-                if (!this.playing) {
-                    this.togglePlaying()
+                if (this.playList.length === 1) {
+                    this.loop()
+                } else {
+                    let index = this.currentIndex - 1
+                    if (index === -1) {
+                        index = this.playList.length - 1
+                    }
+                    this.setCurrentIndex(index)
+                    if (!this.playing) {
+                        this.togglePlaying()
+                    }
                 }
                 this.songReady = false
             },
@@ -262,6 +317,9 @@
             loop() {
                 this.$refs.audio.currentTime = 0
                 this.$refs.audio.play()
+                if (this.currentLyric) {
+                    this.currentLyric.seek(0)
+                }
             },
             ready() {
                 // 控制歌曲切换
@@ -273,6 +331,10 @@
                     if (this.playing) {
                         this.currentLyric.play()
                     }
+                }).catch(() => {
+                    this.currentLyric = null
+                    this.playingLyric = ''
+                    this.currentLineNum = 0
                 })
             },
             handleLyric({lineNum, txt}) {
@@ -283,6 +345,7 @@
                 } else {
                     this.$refs.lyricList.scrollTo(0, 0, 1000)
                 }
+                this.playingLyric = txt
             },
             error() {
                 // 预防特殊错误，导致不能切换歌曲
@@ -301,10 +364,13 @@
                 if (newSong.id === oldSong.id) {
                     return
                 }
-                this.$nextTick(() => {
+                if (this.currentLyric) {
+                    this.currentLyric.stop()
+                }
+                setTimeout(() => {
                     this.$refs.audio.play()
                     this.getLyric()
-                })
+                }, 1000)
             },
             playing(status) {
                 const audio = this.$refs.audio
@@ -411,6 +477,17 @@
                                 border-radius: 50%
                                 box-sizing: border-box
                                 border: 10px solid rgba(255, 255, 255, 0.1)
+                    .playing-lyric-wrapper
+                        margin: 30px auto 0 auto
+                        width: 80%
+                        overflow: hidden
+                        .playing-lyric
+                            height: 20px
+                            line-height:20px
+                            text-align: center
+                            color: $color-text-l
+                            font-size: $font-size-medium
+
                 .middle-r
                     display: inline-block
                     width: 100%
