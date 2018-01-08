@@ -31,3 +31,48 @@ export const randomPlay = function({commit, state}, {list}) {
     commit(types.SET_FULL_SCREEN, true)
     commit(types.SET_PLAYING_STATE, true)
 }
+
+// 歌曲列表中插入歌曲
+export const insertSong = function ({commit, state}, song) {
+    let playList = state.playList.slice()
+    let sequenceList = state.sequenceList.slice()
+    let currentIndex = state.currentIndex
+    let currentSong = playList[currentIndex]
+
+    // 查找playlist中有没有song歌曲
+    let fpindex = findSongIndex(playList, song)
+    currentIndex++
+    // 把song插入到playlist中
+    playList.splice(currentIndex, 0, song)
+    // playlist存在插入的歌曲
+    if (fpindex > -1) {
+        // 插入歌曲的序号大于列表中插入的歌曲序号
+        if (currentIndex > fpindex) {
+            playList.splice(fpindex, 1)
+            currentIndex--
+        } else {
+            playList.splice(fpindex + 1, 1)
+        }
+    }
+    // sequenceList中当前播放歌曲的索引
+    let seqIndex = findSongIndex(sequenceList, currentSong)
+    // 查找sequenceList中有没有song歌曲
+    let fsindex = findSongIndex(sequenceList, song)
+     // 把song插入到sequenceList中
+    seqIndex++
+    sequenceList.splice(seqIndex, 0, song)
+    // sequenceList存在插入的歌曲
+    if (fsindex > -1) {
+        // 插入歌曲的序号大于列表中插入的歌曲序号
+        if (seqIndex > fsindex) {
+            sequenceList.splice(fsindex, 1)
+        } else {
+            sequenceList.splice(fsindex + 1, 1)
+        }
+    }
+    commit(types.SET_PLAYLIST, playList)
+    commit(types.SET_SEQUENCE_LIST, sequenceList)
+    commit(types.SET_CURRENT_INDEX, currentIndex)
+    commit(types.SET_FULL_SCREEN, true)
+    commit(types.SET_PLAYING_STATE, true)
+}
