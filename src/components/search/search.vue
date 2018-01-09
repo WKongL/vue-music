@@ -13,8 +13,18 @@
                         </li>
                     </ul>
                 </div>
+                <div class="search-history" v-show="searchHistory.length">
+                    <h1 class="title">
+                        <span class="text">搜索历史</span>
+                        <span class="clear" @click="clearSearchQuery">
+                            <i class="icon-clear"></i>
+                        </span>
+                    </h1>
+                    <search-list :searches="searchHistory" @select="addQuery" @selectClose="deleteSearchQuery"></search-list>
+                </div>
             </div>
         </div>
+        
         <div class="search-result" v-show="query">
             <suggest @listScroll="blurInput" @select="saveSearch" :query="query"></suggest>
         </div>
@@ -27,7 +37,8 @@
     import {getHotKey} from 'api/search'
     import {ERR_OK} from 'api/config'
     import Suggest from 'components/suggest/suggest'
-    import {mapActions} from 'vuex'
+    import SearchList from 'base/search-list/search-list'
+    import {mapActions, mapGetters} from 'vuex'
 
     export default {
         data() {
@@ -38,6 +49,11 @@
         },
         created() {
             this._getHotKey()
+        },
+        computed: {
+            ...mapGetters([
+                'searchHistory'
+            ])
         },
         methods: {
             addQuery(key) {
@@ -60,18 +76,22 @@
                 })
             },
             ...mapActions([
-                'saveSearchQuery'
+                'saveSearchQuery',
+                'deleteSearchQuery',
+                'clearSearchQuery'
             ])
         },
         components: {
             SearchBox,
-            Suggest
+            Suggest,
+            SearchList
         }
     }
 </script>
 
 <style scoped lang="stylus" rel="stylesheet/stylus">
     @import '~common/stylus/variable'
+    @import '~common/stylus/mixin'
     .search
         .search-box-wrapper
             margin: 20px
@@ -97,6 +117,20 @@
                         color: $color-text-d
                         font-size: $font-size-medium
                         background: $color-highlight-background
+                .search-history
+                    margin: 0 20px
+                    .title
+                        display: flex
+                        align-items: center
+                        height: 40px
+                        color: $color-text-l
+                        font-size: $font-size-medium
+                        .text
+                            flex: 1
+                        .clear
+                            extend-click()
+                            .icon-clear
+                                color: $color-text-d
         .search-result
             position: fixed
             top: 178px

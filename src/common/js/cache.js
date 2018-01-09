@@ -24,6 +24,14 @@ function insertArray(arr, val, compare, maxLen) {
         arr.pop()
     }
 }
+
+// arr根据compare的规则删除对应的数据
+function deleteArray(arr, compare) {
+    let index = arr.findIndex(compare)
+    if (index > -1) {
+        arr.splice(index, 1)
+    }
+}
 // 在本地存储搜索历史记录
 export function saveSearchHistory(query) {
     let search = storage.get(SEARCH_KEY, [])
@@ -34,6 +42,23 @@ export function saveSearchHistory(query) {
     return search
 }
 
+// 在本地存储读取历史记录
 export function loadSearchHistory() {
     return storage.get(SEARCH_KEY, [])
+}
+
+// 在本地存储删除历史记录
+export function deleteSearchHistory(query) {
+    let search = storage.get(SEARCH_KEY, [])
+    deleteArray(search, (item) => {
+        return item === query
+    })
+    storage.set(SEARCH_KEY, search)
+    return search
+}
+
+// 清空本地存储历史记录
+export function clearSearchHistory() {
+    storage.remove(SEARCH_KEY)
+    return []
 }
