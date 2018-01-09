@@ -14,3 +14,16 @@ export function shuffle(arr) {
     }
     return _arr
 }
+
+// 节流
+export function deBounce(fun, delay) {
+    let time
+    return function(...args) {
+        if (time) {
+            clearTimeout(time)
+        }
+        time = setTimeout(() => {
+            fun.apply(this, args)
+        }, delay)
+    }
+}
