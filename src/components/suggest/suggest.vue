@@ -122,6 +122,9 @@
                 }
                 return ret
             },
+            refresh() {
+                this.$refs.suggest.refresh()
+            },
             _normalizeSong(list) {
                 let ret = []
                 list.forEach((musicData) => {

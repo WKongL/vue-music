@@ -3,29 +3,31 @@
         <div class="search-box-wrapper">
             <search-box ref="searchBox" @query="onQueryChange"></search-box>
         </div>
-        <div class="shortcut-wrapper" v-show="!query">
-            <div class="shortcut">
-                <div class="hot-key">
-                    <h1 class="title">热门搜索</h1>
-                    <ul>
-                        <li v-for="item in hotKey" class="item" @click="addQuery(item.k)">
-                            <span>{{item.k}}</span>
-                        </li>
-                    </ul>
+        <div class="shortcut-wrapper" v-show="!query" ref="shortcutWrapper">
+            <scroll class="shortcut" :data="shortcutData" ref="shortcut">
+                <div>
+                    <div class="hot-key">
+                        <h1 class="title">热门搜索</h1>
+                        <ul>
+                            <li v-for="item in hotKey" class="item" @click="addQuery(item.k)">
+                                <span>{{item.k}}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="search-history" v-show="searchHistory.length">
+                        <h1 class="title">
+                            <span class="text">搜索历史</span>
+                            <span class="clear" @click="showConfirm">
+                                <i class="icon-clear"></i>
+                            </span>
+                        </h1>
+                        <search-list :searches="searchHistory" @select="addQuery" @selectClose="deleteSearchQuery"></search-list>
+                    </div>
                 </div>
-                <div class="search-history" v-show="searchHistory.length">
-                    <h1 class="title">
-                        <span class="text">搜索历史</span>
-                        <span class="clear" @click="showConfirm">
-                            <i class="icon-clear"></i>
-                        </span>
-                    </h1>
-                    <search-list :searches="searchHistory" @select="addQuery" @selectClose="deleteSearchQuery"></search-list>
-                </div>
-            </div>
+            </scroll>
         </div>
-        <div class="search-result" v-show="query">
-            <suggest @listScroll="blurInput" @select="saveSearch" :query="query"></suggest>
+        <div class="search-result" v-show="query" ref="searchResult">
+            <suggest @listScroll="blurInput" @select="saveSearch" :query="query" ref="suggest"></suggest>
         </div>
         <confirm text="是否清空所有搜索历史" confirmBtnText="清空" ref="confirm" @confirm="clearSearchQuery"></confirm>
         <router-view></router-view>
@@ -39,9 +41,12 @@
     import Suggest from 'components/suggest/suggest'
     import SearchList from 'base/search-list/search-list'
     import Confirm from 'base/confirm/confirm'
+    import Scroll from 'base/scroll/scroll'
+    import {playListMixin} from 'common/js/mixin'
     import {mapActions, mapGetters} from 'vuex'
 
     export default {
+        mixins: [playListMixin],
         data() {
             return {
                 hotKey: [],
@@ -52,11 +57,21 @@
             this._getHotKey()
         },
         computed: {
+            shortcutData() {
+                return this.hotKey.concat(this.searchHistory)
+            },
             ...mapGetters([
                 'searchHistory'
             ])
         },
         methods: {
+            handlePlayList(playlist) {
+                const bottom = playlist.length > 0 ? '60px' : ''
+                this.$refs.shortcutWrapper.style.bottom = bottom
+                this.$refs.shortcut.refresh()
+                this.$refs.searchResult.style.bottom = bottom
+                this.$refs.suggest.refresh()
+            },
             addQuery(key) {
                 this.$refs.searchBox.setQuery(key)
             },
@@ -85,11 +100,21 @@
                 'clearSearchQuery'
             ])
         },
+        watch: {
+            query(newQuery) {
+                if (!newQuery) {
+                    setTimeout(() => {
+                        this.$refs.shortcut.refresh()
+                    }, 20)
+                }
+            }
+        },
         components: {
             SearchBox,
             Suggest,
             SearchList,
-            Confirm
+            Confirm,
+            Scroll
         }
     }
 </script>
