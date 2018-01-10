@@ -85,6 +85,7 @@
                 </div>
             </div>
         </transition>
+        <playlist></playlist>
         <audio ref="audio" :src="currentSong.url" @canplay="ready" @error="error" @timeupdate="updateTime" @ended="end"></audio>
     </div>
 </template>
@@ -97,6 +98,7 @@
     import {shuffle} from 'common/js/util'
     import Lyric from 'lyric-parser'
     import Scroll from 'base/scroll/scroll'
+    import Playlist from 'components/playlist/playlist'
     import {prefixStyle} from 'common/js/dom'
 
     const transform = prefixStyle('transform')
@@ -161,7 +163,7 @@
                     return
                 }
                 const touch = e.touches[0]
-                console.log(touch.pageX)
+                // console.log(touch.pageX)
                 const moveX = touch.pageX - this.touch.startX
                 const moveY = touch.pageY - this.touch.startY
                 // 如果纵轴移动距离比横轴移动距离大，则不处理。
@@ -382,7 +384,8 @@
         components: {
             progressBar,
             progressCircle,
-            Scroll
+            Scroll,
+            Playlist
         }
     }
 </script>
