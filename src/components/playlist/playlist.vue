@@ -5,22 +5,22 @@
               <div class="list-header">
                   <i class="icon icon-sequence"></i>
                   <span class="text">11</span>
-                  <span class="clear"><i class="icon-clear"></i></span>
+                  <span class="clear" @click="showConfirm"><i class="icon-clear"></i></span>
               </div>
-              <div class="list-content">
+              <scroll class="list-content" :data="sequenceList" ref="listContent">
                   <ul>
-                      <li class="list-item">
-                          <i class="current"></i>
-                          <span class="text"></span>
+                      <li class="list-item" v-for="(item, index) in sequenceList" @click="selectItem(item, index)">
+                          <i class="current" :class="getCurrentIcon(item)"></i>
+                          <span class="text">{{item.name}}-{{item.singer}}</span>
                           <span class="like">
                               <i class="icon-not-like"></i>
                           </span>
-                          <span class="delete">
+                          <span class="delete" @click.stop="deleteOne(item)">
                               <i class="icon-close"></i>
                           </span>
                       </li>
                   </ul>
-              </div>
+              </scroll>
               <div class="list-operate">
                   <div class="add">
                       <i class="icon-add"></i>
@@ -31,24 +31,82 @@
                   <span>关闭</span>
               </div>
           </div>
+          <confirm text="是否清空播放列表" confirmBtnText="清空" ref="confirm" @confirm="confirmClear"></confirm>
       </div>
   </transition>
 </template>
 
 <script type="text/ecmascript-6">
+    import Scroll from 'base/scroll/scroll'
+    import Confirm from 'base/confirm/confirm'
+    import {playMode} from 'common/js/config'
+    import {mapGetters, mapMutations, mapActions} from 'vuex'
     export default {
         data() {
             return {
                 showFlag: false
             }
         },
+        computed: {
+            ...mapGetters([
+                'playList',
+                'sequenceList',
+                'currentSong',
+                'mode'
+            ])
+        },
         methods: {
             show() {
                 this.showFlag = true
+                setTimeout(() => {
+                    this.$refs.listContent.refresh()
+                }, 20)
             },
             hide() {
                 this.showFlag = false
-            }
+            },
+            showConfirm() {
+                this.$refs.confirm.show()
+            },
+            getCurrentIcon(item) {
+                if (item.id === this.currentSong.id) {
+                    return 'icon-play'
+                } else {
+                    return ''
+                }
+            },
+            deleteOne(item) {
+                this.deleteSong(item)
+                if (!this.playList.length) {
+                    this.hide()
+                }
+            },
+            confirmClear() {
+                this.clearSong()
+                this.hide()
+            },
+            selectItem(item, index) {
+                // 随机模式需要再playlist中查找选择歌曲的索引
+                if (this.mode === playMode.random) {
+                    index = this.playList.findIndex((song) => {
+                        return song.id === item.id
+                    })
+                }
+                this.setCurrentIndex(index)
+                this.setPlayingState(true)
+            },
+            ...mapActions([
+                'deleteSong',
+                'clearSong'
+            ]),
+            ...mapMutations({
+                setCurrentIndex: 'SET_CURRENT_INDEX',
+                setPlayingState: 'SET_PLAYING_STATE'
+            })
+        },
+        components: {
+            Scroll,
+            Confirm
         }
     }
 </script>

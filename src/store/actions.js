@@ -78,6 +78,38 @@ export const insertSong = function ({commit, state}, song) {
     commit(types.SET_PLAYING_STATE, true)
 }
 
+// 删除歌曲
+export const deleteSong = function({commit, state}, song) {
+    let playList = state.playList.slice()
+    let sequenceList = state.sequenceList.slice()
+    let currentIndex = state.currentIndex
+
+    const fpIndex = findSongIndex(playList, song)
+    playList.splice(fpIndex, 1)
+
+    const fsIndex = findSongIndex(sequenceList, song)
+    sequenceList.splice(fsIndex, 1)
+
+    if (currentIndex > fpIndex || currentIndex === playList.length) {
+        currentIndex--
+    }
+
+    commit(types.SET_PLAYLIST, playList)
+    commit(types.SET_SEQUENCE_LIST, sequenceList)
+    commit(types.SET_CURRENT_INDEX, currentIndex)
+
+    const playingState = playList.length > 0
+    commit(types.SET_PLAYING_STATE, playingState)
+}
+
+// 清空歌曲
+export const clearSong = function({commit}) {
+    commit(types.SET_PLAYLIST, [])
+    commit(types.SET_SEQUENCE_LIST, [])
+    commit(types.SET_CURRENT_INDEX, -1)
+    commit(types.SET_PLAYING_STATE, false)
+}
+
 // 存储搜索记录
 export const saveSearchQuery = function({commit}, query) {
     commit(types.SET_SEARCH_HISTROY, saveSearchHistory(query))
