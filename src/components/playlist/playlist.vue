@@ -1,7 +1,7 @@
 <template>
   <transition name="list-fade">
-      <div class="playlist">
-          <div class="playlist-wrapper">
+      <div class="playlist" v-show="showFlag" @click="hide">
+          <div class="playlist-wrapper" @click.stop>
               <div class="list-header">
                   <i class="icon icon-sequence"></i>
                   <span class="text">11</span>
@@ -27,7 +27,7 @@
                       <span class="text">添加歌曲到队列</span>
                   </div>
               </div>
-              <div class="close">
+              <div class="list-close" @click="hide">
                   <span>关闭</span>
               </div>
           </div>
@@ -37,7 +37,19 @@
 
 <script type="text/ecmascript-6">
     export default {
-    
+        data() {
+            return {
+                showFlag: false
+            }
+        },
+        methods: {
+            show() {
+                this.showFlag = true
+            },
+            hide() {
+                this.showFlag = false
+            }
+        }
     }
 </script>
 
@@ -52,6 +64,14 @@
         bottom: 0
         z-index: 200
         background: $color-background-d
+        &.list-fade-enter-active, &.list-fade-leave-active
+            transition: opacity 0.3s
+            .playlist-wrapper
+                transition: all 0.3s
+        &.list-fade-enter, &.list-fade-leave-to
+            opacity: 0
+            .playlist-wrapper
+                transform: translate3d(0, 100%, 0)
         .playlist-wrapper
             position: absolute
             left: 0
@@ -119,7 +139,7 @@
                         font-size: $font-size-small-s
                     .text
                         font-size: $font-size-small
-            .close
+            .list-close
                 text-align: center
                 line-height: 50px
                 color: $color-text-l

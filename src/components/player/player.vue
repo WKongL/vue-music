@@ -80,12 +80,12 @@
                         <i :class="miniPlayIcon" class="icon-mini" @click.stop="togglePlaying"></i>
                     </progress-circle>
                 </div>
-                <div class="control">
+                <div class="control" @click.stop="showPlaylist">
                     <i class="icon-playlist"></i>
                 </div>
             </div>
         </transition>
-        <playlist></playlist>
+        <playlist ref="playlist"></playlist>
         <audio ref="audio" :src="currentSong.url" @canplay="ready" @error="error" @timeupdate="updateTime" @ended="end"></audio>
     </div>
 </template>
@@ -263,6 +263,9 @@
             },
             open() {
                 this.setFullScreen(true)
+            },
+            showPlaylist() {
+                this.$refs.playlist.show()
             },
             togglePlaying() {
                 if (!this.songReady) {
