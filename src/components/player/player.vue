@@ -91,7 +91,7 @@
 </template>
 
 <script text="text/ecmascript-6">
-    import {mapGetters, mapMutations} from 'vuex'
+    import {mapGetters, mapMutations, mapActions} from 'vuex'
     import progressBar from 'base/progress-bar/progress-bar'
     import progressCircle from 'base/progress-circle/progress-circle'
     import {playMode} from 'common/js/config'
@@ -304,6 +304,7 @@
             ready() {
                 // 控制歌曲切换
                 this.songReady = true
+                this.savePlayHistory(this.currentSong)
             },
             getLyric() {
                 this.currentSong.getLyric().then((lyric) => {
@@ -333,7 +334,10 @@
             },
             ...mapMutations({
                 setFullScreen: 'SET_FULL_SCREEN'
-            })
+            }),
+            ...mapActions([
+                'savePlayHistory'
+            ])
         },
         watch: {
             currentSong(newSong, oldSong) {

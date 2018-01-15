@@ -3,6 +3,8 @@ import storage from 'good-storage'
 const SEARCH_KEY = '__search__'
 const SEARCH_MAX_LENGTH = 15
 
+const PLAY_KEY = '__play__'
+const PLAY_MAX_LENGTH = 100
 /*
 insertArra是往本地存储的数组插入数据
 arr: 要插入的数组
@@ -20,7 +22,7 @@ function insertArray(arr, val, compare, maxLen) {
         arr.splice(findex, 1)
     }
     arr.unshift(val)
-    if (maxLen && maxLen > SEARCH_MAX_LENGTH) {
+    if (maxLen && arr.length > maxLen) {
         arr.pop()
     }
 }
@@ -61,4 +63,19 @@ export function deleteSearchHistory(query) {
 export function clearSearchHistory() {
     storage.remove(SEARCH_KEY)
     return []
+}
+
+// 在本地存储播放记录
+export function savePlayRecord(song) {
+    let songs = storage.get(PLAY_KEY, [])
+    insertArray(songs, song, (item) => {
+        return item.id === song.id
+    }, PLAY_MAX_LENGTH)
+    storage.set(PLAY_KEY, songs)
+    return songs
+}
+
+// 读取本地播放记录
+export function loadPlayRecord() {
+    return storage.get(PLAY_KEY, [])
 }

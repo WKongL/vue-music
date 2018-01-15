@@ -69,9 +69,6 @@
                 this.$refs.searchResult.style.bottom = bottom
                 this.$refs.suggest.refresh()
             },
-            addQuery(key) {
-                this.$refs.searchBox.setQuery(key)
-            },
             _getHotKey() {
                 getHotKey().then((res) => {
                     if (res.code === ERR_OK) {
