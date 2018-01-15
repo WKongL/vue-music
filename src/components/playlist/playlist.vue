@@ -3,13 +3,13 @@
       <div class="playlist" v-show="showFlag" @click="hide">
           <div class="playlist-wrapper" @click.stop>
               <div class="list-header">
-                  <i class="icon icon-sequence"></i>
-                  <span class="text">11</span>
+                  <i class="icon" :class="iconMode" @click="changeMode"></i>
+                  <span class="text">{{modeText}}</span>
                   <span class="clear" @click="showConfirm"><i class="icon-clear"></i></span>
               </div>
               <scroll class="list-content" :data="sequenceList" ref="listContent">
-                  <ul>
-                      <li class="list-item" v-for="(item, index) in sequenceList" @click="selectItem(item, index)">
+                  <transition-group name="list" tag="ul">
+                      <li :key="item.id" class="list-item" v-for="(item, index) in sequenceList" @click="selectItem(item, index)" ref="listItem">
                           <i class="current" :class="getCurrentIcon(item)"></i>
                           <span class="text">{{item.name}}-{{item.singer}}</span>
                           <span class="like">
@@ -19,12 +19,12 @@
                               <i class="icon-close"></i>
                           </span>
                       </li>
-                  </ul>
+                  </transition-group>
               </scroll>
               <div class="list-operate">
-                  <div class="add">
+                  <div class="add" @click="showAddSong">
                       <i class="icon-add"></i>
-                      <span class="text">添加歌曲到队列</span>
+                      <span class="text">添加歌曲到列表</span>
                   </div>
               </div>
               <div class="list-close" @click="hide">
@@ -32,6 +32,7 @@
               </div>
           </div>
           <confirm text="是否清空播放列表" confirmBtnText="清空" ref="confirm" @confirm="confirmClear"></confirm>
+          <add-song ref="addSong"></add-song>
       </div>
   </transition>
 </template>
@@ -39,27 +40,29 @@
 <script type="text/ecmascript-6">
     import Scroll from 'base/scroll/scroll'
     import Confirm from 'base/confirm/confirm'
+    import AddSong from 'components/add-song/add-song'
     import {playMode} from 'common/js/config'
-    import {mapGetters, mapMutations, mapActions} from 'vuex'
+    import {playerMixin} from 'common/js/mixin'
+    import {mapActions} from 'vuex'
+
     export default {
+        mixins: [playerMixin],
         data() {
             return {
                 showFlag: false
             }
         },
         computed: {
-            ...mapGetters([
-                'playList',
-                'sequenceList',
-                'currentSong',
-                'mode'
-            ])
+            modeText() {
+                return this.mode === playMode.sequence ? '顺序播放' : this.mode === playMode.random ? '随机播放' : '单曲循环'
+            }
         },
         methods: {
             show() {
                 this.showFlag = true
                 setTimeout(() => {
                     this.$refs.listContent.refresh()
+                    this.scrollToCurrent(this.currentSong)
                 }, 20)
             },
             hide() {
@@ -67,6 +70,9 @@
             },
             showConfirm() {
                 this.$refs.confirm.show()
+            },
+            showAddSong() {
+                this.$refs.addSong.show()
             },
             getCurrentIcon(item) {
                 if (item.id === this.currentSong.id) {
@@ -95,18 +101,30 @@
                 this.setCurrentIndex(index)
                 this.setPlayingState(true)
             },
+            scrollToCurrent(song) {
+                // 当前播放歌曲自动滚动到第一位
+                let fsIndex = this.sequenceList.findIndex((item) => {
+                    return item.id === song.id
+                })
+                this.$refs.listContent.scrollToElement(this.$refs.listItem[fsIndex], 300)
+            },
             ...mapActions([
                 'deleteSong',
                 'clearSong'
-            ]),
-            ...mapMutations({
-                setCurrentIndex: 'SET_CURRENT_INDEX',
-                setPlayingState: 'SET_PLAYING_STATE'
-            })
+            ])
+        },
+        watch: {
+            currentSong(newSong, oldSong) {
+                if (!this.showFlag || newSong.id === oldSong.id) {
+                    return
+                }
+                this.scrollToCurrent(newSong)
+            }
         },
         components: {
             Scroll,
-            Confirm
+            Confirm,
+            AddSong
         }
     }
 </script>
@@ -161,6 +179,10 @@
                     align-items: center
                     padding: 0 30px 0 20px
                     height: 40px
+                    &.list-enter-active, &.list-leave-active
+                        transition: all 0.1s linear
+                    &.list-enter, &.list-leave-to
+                        height: 0
                     .current
                         flex: 0 0 20px
                         width: 20px

@@ -90,6 +90,7 @@ export const deleteSong = function({commit, state}, song) {
     const fsIndex = findSongIndex(sequenceList, song)
     sequenceList.splice(fsIndex, 1)
 
+    // 当前的歌曲索引大于删除歌曲的所以，或者当前歌曲是最后一首歌
     if (currentIndex > fpIndex || currentIndex === playList.length) {
         currentIndex--
     }

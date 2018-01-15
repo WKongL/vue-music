@@ -95,16 +95,17 @@
     import progressBar from 'base/progress-bar/progress-bar'
     import progressCircle from 'base/progress-circle/progress-circle'
     import {playMode} from 'common/js/config'
-    import {shuffle} from 'common/js/util'
     import Lyric from 'lyric-parser'
     import Scroll from 'base/scroll/scroll'
     import Playlist from 'components/playlist/playlist'
+    import {playerMixin} from 'common/js/mixin'
     import {prefixStyle} from 'common/js/dom'
 
     const transform = prefixStyle('transform')
     const transitionDuration = prefixStyle('transitionDuration')
 
     export default {
+        mixins: [playerMixin],
         data() {
             return {
                 songReady: false,
@@ -140,12 +141,8 @@
             },
             ...mapGetters([
                 'fullScreen',
-                'playList',
-                'currentSong',
                 'playing',
-                'currentIndex',
-                'mode',
-                'sequenceList'
+                'currentIndex'
             ])
         },
         methods: {
@@ -229,28 +226,6 @@
                 }
                 return num
             },
-            // 改变播放模式
-            changeMode() {
-                const mode = (this.mode + 1) % 3
-                this.setPlayMode(mode)
-                let list = null
-                if (this.mode === playMode.random) {
-                    list = shuffle(this.sequenceList)
-                } else {
-                    list = this.sequenceList
-                }
-                // console.log(this.playList[0].name)
-                this.resetCurrnetIndex(list)
-                this.setPlayList(list)
-                // console.log(this.playList[0].name)
-            },
-            // 获取当前播放歌曲在list中的索引，并把索引设置到currentIndex
-            resetCurrnetIndex(list) {
-                let index = list.findIndex((item) => {
-                    return item.id === this.currentSong.id
-                })
-                this.setCurrentIndex(index)
-            },
             onProgressBarChange(percent) {
                 const currentTime = this.currentSong.duration * percent
                 this.$refs.audio.currentTime = currentTime
@@ -271,7 +246,7 @@
                 if (!this.songReady) {
                     return
                 }
-                this.setPlaying(!this.playing)
+                this.setPlayingState(!this.playing)
                 if (this.currentLyric) {
                     this.currentLyric.togglePlay()
                 }
@@ -357,11 +332,7 @@
                 this.songReady = true
             },
             ...mapMutations({
-                setFullScreen: 'SET_FULL_SCREEN',
-                setPlaying: 'SET_PLAYING_STATE',
-                setCurrentIndex: 'SET_CURRENT_INDEX',
-                setPlayMode: 'SET_PLAY_MODE',
-                setPlayList: 'SET_PLAYLIST'
+                setFullScreen: 'SET_FULL_SCREEN'
             })
         },
         watch: {
@@ -374,6 +345,9 @@
                 }
                 if (this.currentLyric) {
                     this.currentLyric.stop()
+                    this.currentTime = 0
+                    this.playingLyric = ''
+                    this.currentLineNum = 0
                 }
                 setTimeout(() => {
                     this.$refs.audio.play()
