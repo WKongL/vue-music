@@ -72,6 +72,9 @@
         methods: {
             show() {
                 this.showFlag = true
+                this.refreshList()
+            },
+            refreshList() {
                 setTimeout(() => {
                     if (this.switchIndex === 0) {
                         this.$refs.songList.refresh()
@@ -103,6 +106,13 @@
             ...mapActions([
                 'insertSong'
             ])
+        },
+        watch: {
+            query(newQuery) {
+                if (!newQuery) {
+                    this.refreshList()
+                }
+            }
         },
         components: {
             SearchBox,

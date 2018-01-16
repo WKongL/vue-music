@@ -90,7 +90,9 @@
             }
         },
         watch: {
-            data() {
+            data(ndata) {
+                console.log(ndata)
+                console.log(this.refreshDelay)
                 setTimeout(() => {
                     this.refresh()
                 }, this.refreshDelay)
