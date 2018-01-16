@@ -13,12 +13,12 @@
           <div class="shortcut" v-show="!query">
               <switches :switches="switches" :currentIndex="switchIndex" @switch="switchSelect"></switches>
               <div class="list-wrapper">
-                <scroll v-if="switchIndex === 0" :data="playHistory" class="list-scroll">
+                <scroll ref="songList" v-if="switchIndex === 0" :data="playHistory" class="list-scroll">
                     <div class="list-inner">
                         <song-list :songs="playHistory" @select="savePlay"></song-list>
                     </div>
                 </scroll>
-                <scroll v-if="switchIndex === 1" class="list-scroll">
+                <scroll ref="searchList" v-if="switchIndex === 1" class="list-scroll" :refreshDelay="refreshDelay" :data="searchHistory">
                     <div class="list-inner">
                         <search-list :searches="searchHistory" @select="addQuery" @selectClose="deleteSearchQuery"></search-list>
                     </div>
@@ -28,6 +28,12 @@
           <div class="search-result" v-show="query">
               <suggest :query="query" ref="suggest" :showSinger="showSinger" @listScroll="blurInput" @select="selectSuggest"></suggest>
           </div>
+          <top-tip ref="topTip">
+              <div class="tip-title">
+                  <i class="icon-ok"></i>
+                  <span class="text">1首歌曲已经添加到播放列表</span>
+              </div>
+          </top-tip>
       </div>
   </transition>
 </template>
@@ -41,6 +47,7 @@
     import SongList from 'base/song-list/song-list'
     import SearchList from 'base/search-list/search-list'
     import Song from 'common/js/song'
+    import TopTip from 'base/top-tip/top-tip'
     import {mapGetters, mapActions} from 'vuex'
 
     export default {
@@ -65,12 +72,23 @@
         methods: {
             show() {
                 this.showFlag = true
+                setTimeout(() => {
+                    if (this.switchIndex === 0) {
+                        this.$refs.songList.refresh()
+                    } else {
+                        this.$refs.searchList.refresh()
+                    }
+                }, 20)
+            },
+            showTip() {
+                this.$refs.topTip.show()
             },
             hide() {
                 this.showFlag = false
             },
             selectSuggest() {
                 this.saveSearch()
+                this.showTip()
             },
             switchSelect(index) {
                 this.switchIndex = index
@@ -79,6 +97,7 @@
                 // 此song是从stroage取出来的对象，而不是song的实例，所以需要重新new一个song实例
                 if (index !== 0) {
                     this.insertSong(new Song(song))
+                    this.showTip()
                 }
             },
             ...mapActions([
@@ -91,7 +110,8 @@
             Switches,
             Scroll,
             SongList,
-            SearchList
+            SearchList,
+            TopTip
         }
     }
 </script>
@@ -144,6 +164,18 @@
             top: 124px
             bottom: 0
             width: 100%
+        .tip-title
+            padding: 18px 0
+            font-size: 0
+            text-align: center
+            .icon-ok
+                margin-right: 4px
+                color: $color-theme
+                font-size: $font-size-medium
+            .text
+                color: $color-text
+                font-size: $font-size-medium
+
 </style>
 
 
