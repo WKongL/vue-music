@@ -2,6 +2,9 @@
 	<div class="m-header">
 		<i class="icon"></i>
 		<span class="text">Chicken Music</span>
+		<router-link to="/user" tag="div" class="user">
+			<i class="icon-mine"></i>
+		</router-link>
 	</div>
 </template>
 
@@ -31,4 +34,13 @@
 			vertical-align: top
 			line-height: 44px
 			font-size: $font-size-large
+		.user
+			position: absolute
+			top: 0
+			right: 0
+			.icon-mine
+				display: block
+				padding: 12px
+				color: $color-theme
+				font-size: 20px
 </style>
