@@ -5,6 +5,9 @@ const SEARCH_MAX_LENGTH = 15
 
 const PLAY_KEY = '__play__'
 const PLAY_MAX_LENGTH = 100
+
+const FAVORITE_KEY = '__favorite__'
+const FAVORITE_MAX_LENGTH = 200
 /*
 insertArra是往本地存储的数组插入数据
 arr: 要插入的数组
@@ -78,4 +81,29 @@ export function savePlayRecord(song) {
 // 读取本地播放记录
 export function loadPlayRecord() {
     return storage.get(PLAY_KEY, [])
+}
+
+// 在本地存储喜欢歌曲
+export function saveFavorite(song) {
+    let favorite = storage.get(FAVORITE_KEY, [])
+    insertArray(favorite, song, (item) => {
+        return item.id === song.id
+    }, FAVORITE_MAX_LENGTH)
+    storage.set(FAVORITE_KEY, favorite)
+    return favorite
+}
+
+// 在本地删除喜欢歌曲
+export function deleteFavorite(song) {
+    let favorite = storage.get(FAVORITE_KEY, [])
+    deleteArray(favorite, (item) => {
+        return item.id === song.id
+    })
+    storage.set(FAVORITE_KEY, favorite)
+    return favorite
+}
+
+// 读取本地存储喜欢歌曲
+export function loadFavorite() {
+    return storage.get(FAVORITE_KEY, [])
 }

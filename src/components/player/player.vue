@@ -59,8 +59,8 @@
                         <div class="icon i-right" :class="disableCls">
                             <i class="icon-next" @click="next"></i>
                         </div>
-                        <div class="icon i-right">
-                            <i class="icon-not-like"></i>
+                        <div class="icon i-right" @click="toggleFavorite(currentSong)">
+                            <i :class="getFavoriteIcon(currentSong)"></i>
                         </div>
                     </div>
                 </div>
@@ -541,6 +541,8 @@
                             color: $color-theme-d
                         i 
                             font-size: 30px
+                        .icon-like
+                            color: $color-sub-theme
                     .i-left   
                         text-align: right 
                     .i-center
