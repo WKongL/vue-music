@@ -1,6 +1,7 @@
 # vue-music
 
 > music play
+仅仅用于vue的项目学习，不可作为商业用途。
 
 ## Build Setup
 
